@@ -7,6 +7,8 @@
 
 import threading
 import argparse
+import os.path
+import sys
 
 """word_frequency.py, a python module whose main function,
     generate_histogram, takes in a stream of input and returns
@@ -76,7 +78,7 @@ class Histogram:
 
     def sorted_word_freq_list(self):
         """Runs through each key in the histogram alphabetically, returning
-        a formatted list of strings with each word and its count"""
+        a list of tuples containing (word, count)"""
         running_list = list()
         for word in self.dictionary:
             running_list.append((word, self.dictionary[word].get_count()))
@@ -94,11 +96,15 @@ def generate_histogram(input_contents):
     return return_histogram
 
 
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("input_file", type=str)
     args = parser.parse_args()
+
+    if not (os.path.isfile(args.input_file)):
+        print>>sys.stderr, "Error: File \"{0}\" not found. Please try again."\
+                                                    .format(args.input_file)
+        exit(2)
 
     file_to_parse = open(args.input_file, 'r')
     lines_in_file = list(file_to_parse)
@@ -109,7 +115,7 @@ def main():
     for freq_pair in word_freq_list:
         output_string += "{0} {1}\n".format(freq_pair[0], freq_pair[1])
     print output_string        
-    
+
 
 if __name__ == '__main__':
     main()
