@@ -74,10 +74,14 @@ class Histogram:
         self.dict_lock.release()
         return return_count
 
-    def output_contents(self):
+    def sorted_word_freq_list(self):
         """Runs through each key in the histogram alphabetically, returning
         a formatted list of strings with each word and its count"""
-        pass
+        running_list = list()
+        for word in self.dictionary:
+            running_list.append((word, self.dictionary[word].get_count()))
+        running_list.sort(key=lambda t:t[0])
+        return running_list
 
 def generate_histogram(input_contents):
     """Takes in a list of lines as input, and parses each line for words,
@@ -100,9 +104,12 @@ def main():
     lines_in_file = list(file_to_parse)
     final_histogram = generate_histogram(lines_in_file)
 
-    final_histogram.output_contents()
-
-
+    word_freq_list = final_histogram.sorted_word_freq_list()
+    output_string = ""
+    for freq_pair in word_freq_list:
+        output_string += "{0} {1}\n".format(freq_pair[0], freq_pair[1])
+    print output_string        
+    
 
 if __name__ == '__main__':
     main()

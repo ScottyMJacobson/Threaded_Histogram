@@ -67,6 +67,11 @@ def main():
     tests_passed = tests_passed or test_cmp(lol_count, 2, "Simple Histogram Generation LOL")
     tests_passed = tests_passed or test_cmp(dotlol_count, 1, "Simple Histogram Generation .LOL")
 
+    test_list = histogram_gen.sorted_word_freq_list()
+    golden_list = [(".lol",1),("hey",4),("horses",2),("lol",2)]
+
+    tests_passed = tests_passed or test_cmp(test_list, golden_list, "sorted_word_freq_list Check")
+
 
     if tests_passed:
         print "Tests Passed."
