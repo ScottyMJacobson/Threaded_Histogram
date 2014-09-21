@@ -53,6 +53,13 @@ def main():
 
     tests_passed = tests_passed or test_cmp(example_histogram.get_count("dummy"), 3, "Simple Word Adding")
 
+    example_input_string = "HEY hey Horses .lol      Hey        \n Hey Horses"
+
+    #TEST SIMPLE HISTOGRAM GENERATION
+    histogram_gen = word_frequency.generate_histogram(example_input_string)
+    hey_count = histogram_gen.get_count("Hey")
+
+    tests_passed = tests_passed or test_cmp(hey_count, 4, "Simple Histogram Generation")
 
     if tests_passed:
         print "Tests Passed."

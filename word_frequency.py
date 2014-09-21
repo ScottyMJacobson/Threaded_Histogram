@@ -70,7 +70,12 @@ class Histogram:
         return return_count
 
 def generate_histogram(input_contents):
-    pass
+    return_histogram = Histogram()
+    for line in input_contents:
+        words = line.split()
+        for word in words:
+            return_histogram.increase_count(word)
+    return return_histogram
 
 
 
@@ -80,5 +85,8 @@ def main():
     args = parser.parse_args()
 
     file_to_parse = open(args.input_file, 'r')
+    lines_in_file = list(file_to_parse)
+    final_histogram = generate_histogram(lines_in_file)
+
 
 
