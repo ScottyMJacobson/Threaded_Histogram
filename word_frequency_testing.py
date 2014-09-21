@@ -49,6 +49,7 @@ def main():
     example_histogram.increase_count("Dummy")
     example_histogram.increase_count("dummy")
     example_histogram.increase_count("dummy ")
+    example_histogram.increase_count("dummy. ")
 
     tests_passed = tests_passed or test_cmp(example_histogram.get_count("dummy"), 3, "Simple Word Adding")
 

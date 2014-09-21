@@ -69,5 +69,16 @@ class Histogram:
         self.dict_lock.release()
         return return_count
 
+def generate_histogram(input_contents):
+    pass
+
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("input_file", type=str)
+    args = parser.parse_args()
+
+    file_to_parse = open(args.input_file, 'r')
 
 
