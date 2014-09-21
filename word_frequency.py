@@ -6,6 +6,7 @@
 # COMP50 Concurrant Programming
 
 import threading
+import argparse
 
 """word_frequency.py, a python module whose main function,
     generate_histogram, takes in a stream of input and returns
@@ -49,6 +50,8 @@ class Histogram:
         self.dict_lock = threading.Lock()
 
     def increase_count(self, word):
+        """If word exists in the histogram, increment, else add it 
+        to the histogram and increment it once"""
         word = word.lower()
         word = word.strip()
         self.dict_lock.acquire()
@@ -60,6 +63,8 @@ class Histogram:
         self.dict_lock.release()
 
     def get_count(self, word):
+        """If word exists in histogram, return its current count,
+        otherwise, return 0"""
         word = word.lower()
         word = word.strip()        
         self.dict_lock.acquire()
@@ -69,7 +74,14 @@ class Histogram:
         self.dict_lock.release()
         return return_count
 
+    def output_contents(self):
+        """Runs through each key in the histogram alphabetically, returning
+        a formatted list of strings with each word and its count"""
+        pass
+
 def generate_histogram(input_contents):
+    """Takes in a list of lines as input, and parses each line for words,
+    adding each word to a final histogram list which it returns"""
     return_histogram = Histogram()
     for line in input_contents:
         words = line.split()
@@ -88,6 +100,10 @@ def main():
     lines_in_file = list(file_to_parse)
     final_histogram = generate_histogram(lines_in_file)
 
-    
+    final_histogram.output_contents()
 
+
+
+if __name__ == '__main__':
+    main()
 
