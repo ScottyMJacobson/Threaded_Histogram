@@ -30,6 +30,11 @@ that provides thread-safe access to a countable integer
         self.count += 1
         self.lock.release()
 
+    def reset(self, new_count=0):
+        self.lock.acquire()
+        self.count = new_count
+        self.lock.release()
+
     def get_count(self):
         self.lock.acquire()
         count = self.count
