@@ -1,8 +1,20 @@
-A module, word_frequency, that generates a histogram of word frequencies in a given document, 
+word_frequency.py is a module that generates a histogram of word frequencies 
+in a given document.
+
+word_frequency.py can be run as a program that takes in a single argument,
+a text file to parse, and outputs a list of words found and their frequencies
+
+usage:
+python word_frequency.py sampletext.txt
 
 This module will be integrated into word_histogram, which takes in multiple input files,
 and performs a cumulative threaded word frequency diagram. 
 
 
+
+
+
+
 This repository includes related basic unit tests, which can be run as:
+
 python word_frequency_testing.py
