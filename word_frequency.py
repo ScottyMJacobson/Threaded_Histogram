@@ -5,17 +5,20 @@
 # 9/25/14
 # COMP50 Concurrant Programming
 
+import threading
+
 """word_frequency.py, a python module whose main function,
     generate_histogram, takes in a stream of input and returns
     a dictionary matching word keys to WordCount objects"""
 
 
 class SafeCount:
-"""SafeCount, a wrapper for an object that provides thread-safe access 
-to a countable integer (this use case: for a particular word's frequency)"""    
+"""SafeCount, a wrapper for an object, similar to a semaphore, 
+that provides thread-safe access to a countable integer 
+(this use case: counts a particular word's frequency)"""    
     def __init__(self):
         self.count = 0
-        self.lock = Lock()
+        self.count_lock = threading.Lock()
 
     def increment(self):
         self.lock.acquire()
@@ -32,3 +35,12 @@ to a countable integer (this use case: for a particular word's frequency)"""
         count = self.count
         self.lock.release()
         return count
+
+class Histogram:
+"""Histogram, a class that wraps and provides thread-safe access to 
+a dict whose keys are strings and whose objects are SafeCounts"""
+    def __init__(self):
+        self.dictionary = dict()
+        self.dict_lock = threading.Lock()
+
+    def increase_count(self, word):
