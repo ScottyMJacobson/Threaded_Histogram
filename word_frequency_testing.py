@@ -43,6 +43,16 @@ def main():
     example_safecount.decrement()
     tests_passed = tests_passed or test_cmp(example_safecount.get_count(), 3, "Simple Decrement")
 
+    #TEST THREADED DECREMENT
+    example_safecount.reset(5)
+    thread1 = threading.Thread(target=example_safecount.decrement())
+    thread2 = threading.Thread(target=example_safecount.decrement())
+    thread1.start()
+    thread2.start()
+    thread1.join()
+    thread2.join()
+    tests_passed = tests_passed or test_cmp(example_safecount.get_count(), 3, "Threaded Decrement")
+
     #TEST SIMPLE HISTOGRAM
     example_histogram = word_frequency.Histogram()
 
