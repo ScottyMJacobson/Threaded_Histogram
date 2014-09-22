@@ -96,6 +96,10 @@ def main():
 
     test_cmp(test_list, golden_list, "sorted_word_freq_list Check")
 
+    #TEST ABSORB LIST INTO BLANK
+    master_list = word_frequency.Histogram()
+    master_list.absorb(histogram_gen)
+    test_cmp(master_list.sorted_word_freq_list(), histogram_gen.sorted_word_freq_list(), "Sorted absorb list test")
 
     if tests_passed:
         print "Tests Passed."

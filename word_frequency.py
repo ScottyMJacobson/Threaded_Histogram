@@ -105,15 +105,14 @@ class Histogram:
 
     def absorb(self, other_histogram):
         """Takes in a second histogram, and adds its word frequencies to 
-        its list. The final result is self is a histogram containing 
+        self's list. The final result in self is a histogram containing 
         the sum of the word frequencies in both"""
-        for word_to_add in other_histogram:
-            self.increase_count_by(word_to_add, \
-                                        other_histogram.get_count(word_to_add))
+        for (word_to_add,word_count) in other_histogram.sorted_word_freq_list():
+            self.increase_count_by(word_to_add, word_count)
 
 
 def generate_histogram(input_contents):
-    """Takes in a LIST of lines as input, and parses each 
+    """Takes in a !LIST of lines as input, and parses each 
     line for words, adding each word to a final histogram list which returns"""
     return_histogram = Histogram()
     for line_or_word in input_contents:
