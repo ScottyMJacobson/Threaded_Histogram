@@ -86,13 +86,13 @@ class Histogram:
         return running_list
 
 def generate_histogram(input_contents):
-    """Takes in a list of lines as input, and parses each line for words,
-    adding each word to a final histogram list which it returns"""
+    """Takes in a LIST of lines as input, and parses each 
+    line for words, adding each word to a final histogram list which returns"""
     return_histogram = Histogram()
-    for line in input_contents:
-        words = line.split()
+    for line_or_word in input_contents:
+        words = line_or_word.split()
         for word in words:
-            return_histogram.increase_count(word)
+            return_histogram.increase_count(word)        
     return return_histogram
 
 

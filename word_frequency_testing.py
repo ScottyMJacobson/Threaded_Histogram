@@ -67,10 +67,10 @@ def main():
 
     test_cmp(example_histogram.get_count("dummy"), 3, "Simple Word Adding")
 
-    example_input_string = "HEY hey Horses .lol      Hey    lol LOL    \n Hey Horses"
+    example_input_string_list = ["HEY hey Horses .lol      Hey    lol LOL    \n Hey Horses"]
 
     #TEST SIMPLE HISTOGRAM GENERATION
-    histogram_gen = word_frequency.generate_histogram(example_input_string)
+    histogram_gen = word_frequency.generate_histogram(example_input_string_list)
     hey_count = histogram_gen.get_count("Hey")
     horses_count = histogram_gen.get_count("horses")
     lol_count = histogram_gen.get_count("lol")
