@@ -13,35 +13,36 @@ import word_frequency
 word_frequency.py"""
 
 tests_failed_string = ""
+global tests_passed = True
 
 def test_cmp (test_value, correct_value, test_name):
     if test_value == correct_value:
-        return True
+        return
     else:
         tests_failed_string += test_name
         tests_failed_string += " Failed: {0} != {1}\n"\
                                             .format(test_value, correct_value)
-        return False
+        global tests_passed = False
+        return
 
 def main():
-    tests_passed = True
     tests_failed_string = ""
     example_safecount = word_frequency.SafeCount()
     
     #TEST SIMPLE INCREMENT
     example_safecount.increment()
     example_safecount.increment()
-    tests_passed = tests_passed or test_cmp(example_safecount.get_count(), 2, "Simple Increment")
+    test_cmp(example_safecount.get_count(), 2, "Simple Increment")
 
     #TEST SIMPLE RESET
     example_safecount.reset(5)
-    tests_passed = tests_passed or test_cmp(example_safecount.get_count(), 5, "Simple Reset")
+    test_cmp(example_safecount.get_count(), 5, "Simple Reset")
 
     #TEST SIMPLE DECREMENT
     example_safecount.reset(5)
     example_safecount.decrement()
     example_safecount.decrement()
-    tests_passed = tests_passed or test_cmp(example_safecount.get_count(), 3, "Simple Decrement")
+    test_cmp(example_safecount.get_count(), 3, "Simple Decrement")
 
     #TEST THREADED DECREMENT
     example_safecount.reset(5)
@@ -51,7 +52,7 @@ def main():
     thread2.start()
     thread1.join()
     thread2.join()
-    tests_passed = tests_passed or test_cmp(example_safecount.get_count(), 3, "Threaded Decrement")
+    test_cmp(example_safecount.get_count(), 3, "Threaded Decrement")
 
     #TEST SIMPLE HISTOGRAM
     example_histogram = word_frequency.Histogram()
@@ -61,7 +62,7 @@ def main():
     example_histogram.increase_count("dummy ")
     example_histogram.increase_count("dummy. ")
 
-    tests_passed = tests_passed or test_cmp(example_histogram.get_count("dummy"), 3, "Simple Word Adding")
+    test_cmp(example_histogram.get_count("dummy"), 3, "Simple Word Adding")
 
     example_input_string = "HEY hey Horses .lol      Hey    lol LOL    \n Hey Horses"
 
@@ -72,15 +73,15 @@ def main():
     lol_count = histogram_gen.get_count("lol")
     dotlol_count = histogram_gen.get_count(".lol")
 
-    tests_passed = tests_passed or test_cmp(hey_count, 4, "Simple Histogram Generation Hey")
-    tests_passed = tests_passed or test_cmp(horses_count, 2, "Simple Histogram Generation Horses")
-    tests_passed = tests_passed or test_cmp(lol_count, 2, "Simple Histogram Generation LOL")
-    tests_passed = tests_passed or test_cmp(dotlol_count, 1, "Simple Histogram Generation .LOL")
+    test_cmp(hey_count, 4, "Simple Histogram Generation Hey")
+    test_cmp(horses_count, 2, "Simple Histogram Generation Horses")
+    test_cmp(lol_count, 2, "Simple Histogram Generation LOL")
+    test_cmp(dotlol_count, 1, "Simple Histogram Generation .LOL")
 
     test_list = histogram_gen.sorted_word_freq_list()
     golden_list = [(".lol",1),("hey",4),("horses",2),("lol",2)]
 
-    tests_passed = tests_passed or test_cmp(test_list, golden_list, "sorted_word_freq_list Check")
+    test_cmp(test_list, golden_list, "sorted_word_freq_list Check")
 
 
     if tests_passed:
