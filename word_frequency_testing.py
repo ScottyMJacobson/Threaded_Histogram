@@ -13,16 +13,19 @@ import word_frequency
 word_frequency.py"""
 
 tests_failed_string = ""
-global tests_passed = True
+tests_passed = True
 
 def test_cmp (test_value, correct_value, test_name):
     if test_value == correct_value:
         return
     else:
+        global tests_failed_string
         tests_failed_string += test_name
         tests_failed_string += " Failed: {0} != {1}\n"\
                                             .format(test_value, correct_value)
-        global tests_passed = False
+        print tests_failed_string
+        global tests_passed
+        tests_passed = False
         return
 
 def main():
