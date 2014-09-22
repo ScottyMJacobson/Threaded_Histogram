@@ -41,6 +41,11 @@ def main():
     example_safecount.reset(5)
     test_cmp(example_safecount.get_count(), 5, "Simple Reset")
 
+    #TEST INCREASE BY
+    example_safecount.reset(5)
+    example_safecount.increase_by(7)
+    test_cmp(example_safecount.get_count(), 12, "Simple Increase By")
+
     #TEST SIMPLE DECREMENT
     example_safecount.reset(5)
     example_safecount.decrement()
@@ -60,12 +65,17 @@ def main():
     #TEST SIMPLE HISTOGRAM
     example_histogram = word_frequency.Histogram()
 
-    example_histogram.increase_count("Dummy")
-    example_histogram.increase_count("dummy")
-    example_histogram.increase_count("dummy ")
-    example_histogram.increase_count("dummy. ")
+    example_histogram.increment_count("Dummy")
+    example_histogram.increment_count("dummy")
+    example_histogram.increment_count("dummy ")
+    example_histogram.increment_count("dummy. ")
 
     test_cmp(example_histogram.get_count("dummy"), 3, "Simple Word Adding")
+
+    #TEST HISTOGRAM INCREASE_COUNT_BY
+    example_histogram.increase_count_by("dummy", 2)
+    test_cmp(example_histogram.get_count("dummy"), 3+2, "Increase_Count_By")
+
 
     example_input_string_list = ["HEY hey Horses .lol      Hey    lol LOL    \n Hey Horses"]
 

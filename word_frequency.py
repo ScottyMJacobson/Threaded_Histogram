@@ -28,6 +28,11 @@ class SafeCount:
         self.count += 1
         self.count_lock.release()
 
+    def increase_by(self, amount):
+        self.count_lock.acquire()
+        self.count += amount
+        self.count_lock.release()
+
     def decrement(self):
         self.count_lock.acquire()
         self.count -= 1
@@ -51,7 +56,7 @@ class Histogram:
         self.dictionary = dict()
         self.dict_lock = threading.Lock()
 
-    def increase_count(self, word):
+    def increment_count(self, word):
         """If word exists in the histogram, increment, else add it 
         to the histogram and increment it once"""
         word = word.lower()
@@ -62,6 +67,19 @@ class Histogram:
         else:
             self.dictionary[word] = SafeCount()
             self.dictionary[word].increment()
+        self.dict_lock.release()
+ 
+    def increase_count_by(self, word, amount):
+        """If word exists in the histogram, increase the count by amount, 
+        else add it to the histogram and increment it once"""
+        word = word.lower()
+        word = word.strip()
+        self.dict_lock.acquire()
+        if word in self.dictionary:
+            self.dictionary[word].increase_by(amount)
+        else:
+            self.dictionary[word] = SafeCount()
+            self.dictionary[word].reset(amount)
         self.dict_lock.release()
 
     def get_count(self, word):
@@ -85,6 +103,15 @@ class Histogram:
         running_list.sort(key=lambda t:t[0])
         return running_list
 
+    def absorb(self, other_histogram):
+        """Takes in a second histogram, and adds its word frequencies to 
+        its list. The final result is self is a histogram containing 
+        the sum of the word frequencies in both"""
+        for word_to_add in other_histogram:
+            self.increase_count_by(word_to_add, \
+                                        other_histogram.get_count(word_to_add))
+
+
 def generate_histogram(input_contents):
     """Takes in a LIST of lines as input, and parses each 
     line for words, adding each word to a final histogram list which returns"""
@@ -92,7 +119,7 @@ def generate_histogram(input_contents):
     for line_or_word in input_contents:
         words = line_or_word.split()
         for word in words:
-            return_histogram.increase_count(word)        
+            return_histogram.increment_count(word)        
     return return_histogram
 
 
