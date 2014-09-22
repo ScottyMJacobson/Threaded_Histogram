@@ -97,9 +97,18 @@ def main():
     test_cmp(test_list, golden_list, "sorted_word_freq_list Check")
 
     #TEST ABSORB LIST INTO BLANK
-    master_list = word_frequency.Histogram()
-    master_list.absorb(histogram_gen)
-    test_cmp(master_list.sorted_word_freq_list(), histogram_gen.sorted_word_freq_list(), "Sorted absorb list test")
+    master_list1 = word_frequency.Histogram()
+    master_list1.absorb(histogram_gen)
+    test_cmp(master_list1.sorted_word_freq_list(), histogram_gen.sorted_word_freq_list(), "Sorted absorb list test")
+
+    #TEST ABSORB LIST INTO LIST
+    example_input_string_list2 = ["hardy har har horses hey .lol LOL lol \n"]
+    master_list2 = word_frequency.generate_histogram(example_input_string_list2)
+
+    master_list2.absorb(histogram_gen)
+    golden_list2 = [(".lol",2),("har", 2),("hardy",1),("hey",5),("horses",3),("lol",4)]
+    test_cmp(master_list2.sorted_word_freq_list(), golden_list2, "Absorb original list into master_list2")
+
 
     if tests_passed:
         print "Tests Passed."
