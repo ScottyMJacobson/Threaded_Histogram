@@ -8,6 +8,7 @@
 import sys
 import threading
 import word_frequency
+from word_histogram import SafeList
 
 """word_frequency_testing.py, a testing environment for module
 word_frequency.py"""
@@ -97,18 +98,43 @@ def main():
     test_cmp(test_list, golden_list, "sorted_word_freq_list Check")
 
     #TEST ABSORB LIST INTO BLANK
-    master_list1 = word_frequency.Histogram()
-    master_list1.absorb(histogram_gen)
-    test_cmp(master_list1.sorted_word_freq_list(), histogram_gen.sorted_word_freq_list(), "Sorted absorb list test")
+    master_hist1 = word_frequency.Histogram()
+    master_hist1.absorb(histogram_gen)
+    test_cmp(master_hist1.sorted_word_freq_list(), histogram_gen.sorted_word_freq_list(), "Sorted absorb list test")
 
-    #TEST ABSORB LIST INTO LIST
+    #TEST ABSORB FULL LIST INTO FULL LIST
     example_input_string_list2 = ["hardy har har horses hey .lol LOL lol \n"]
-    master_list2 = word_frequency.generate_histogram(example_input_string_list2)
+    master_hist2 = word_frequency.generate_histogram(example_input_string_list2)
 
-    master_list2.absorb(histogram_gen)
+    master_hist2.absorb(histogram_gen)
     golden_list2 = [(".lol",2),("har", 2),("hardy",1),("hey",5),("horses",3),("lol",4)]
-    test_cmp(master_list2.sorted_word_freq_list(), golden_list2, "Absorb original list into master_list2")
+    test_cmp(master_hist2.sorted_word_freq_list(), golden_list2, "Absorb original list into master_list2")
 
+    #TEST ABSORB TWO LISTS AT ONCE
+    example_input_string_list3 = ["the cake is a lie LOL \n"]
+    listogram = list()
+    listogram.append(word_frequency.generate_histogram(example_input_string_list3))
+    listogram.append(word_frequency.generate_histogram(example_input_string_list2))
+    listogram.append(word_frequency.generate_histogram(example_input_string_list))
+
+    threads_list = list()
+    for histo in listogram[1:]:
+        threads_list.append(threading.Thread(target=listogram[0].absorb, args=(histo,)))
+
+    for thread in threads_list:
+        thread.start()
+    for thread in threads_list:
+        thread.join()
+
+    golden_cumulative = [(".lol",2), ("a", 1), ("cake", 1), ("har", 2),("hardy",1),("hey",5),("horses",3)]
+    golden_cumulative += [("is", 1), ("lie", 1), ("lol",5), ("the", 1)]
+
+    test_cmp(listogram[0].sorted_word_freq_list(), golden_cumulative, "Threaded huge multi absorb")
+
+    #SAFELIST SIMPLE APPEND AND POP TEST
+    safelist_tester = SafeList()
+    safelist_tester.append("Hello!")
+    test_cmp(safelist_tester.pop(), "Hello!", "SafeList Simple Append and Pop")
 
     if tests_passed:
         print "Tests Passed."
