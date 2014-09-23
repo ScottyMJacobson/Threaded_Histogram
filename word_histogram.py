@@ -69,13 +69,24 @@ def thread_runtime(filename_buffer, global_histogram, \
     #2 - consumer check if there are per_file_histograms to combine, wait on
         # the global variable and have that kill the thread
     
-def process_list_and_print(per_file_print_buffer, destination, \
+def process_list_and_print(print_buffer, destination, \
                                                     print_filename = False):
     """Takes in a list of (filename,sorted_word_freq_list) tuples and prints
     to destination. 
     If print_filename is True, it prints in individual format, else it
     just prints the words line by line"""
-    pass
+    current_tuple = print_buffer.pop()
+    while (current_tuple):
+        current_filename = current_tuple[0]
+        current_word_freq_list = current_tuple[1]
+        for current_word_freq in current_word_freq_list:
+            if print_filename:
+                print>>destination, "{0}:\t{1} {2}".format(current_filename,\
+                                current_word_freq[0], current_word_freq[1])
+            else:
+                print>>destination, "{0} {1}".format(\
+                                    current_word_freq[0], current_word_freq[1])
+        current_tuple = print_buffer.pop()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -106,7 +117,17 @@ def main():
         thread.join()
 
     process_list_and_print(per_file_print_buffer, sys.stdout, True)
+    global_print_buffer = SafeList()
+    global_print_buffer.append(\
+                        ("Global",global_histogram.sorted_word_freq_list())   )
+    output_destination = sys.stdout
+    if args.outfile:
+        if args.outfile == " ":
+            output_destination = sys.stdout
+        else:
+            output_destination = open(args.outfile, 'w')
 
+    process_list_and_print(global_print_buffer, output_destination)
 
 
 if __name__ == '__main__':
