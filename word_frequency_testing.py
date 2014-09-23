@@ -155,8 +155,10 @@ def main():
 
     if tests_passed:
         print "Tests Passed."
+        exit(0)
     else:
         print "Tests failed: {0}".format(tests_failed_string)
+        exit(1)
 
 
 if __name__ == '__main__':

@@ -31,9 +31,13 @@ class SafeList:
 
     def pop(self, index=0):
         """pops item at index from the list and returns. If no index is 
-        specified, pops from the back of the list"""
+        specified, pops from the back of the list. If the list is empty,
+        returns as void with NoneType object"""
         self.list_lock.acquire()
-        return_value = self.items.pop(index)
+        if len(self.items):
+            return_value = self.items.pop(index)
+        else:
+            return_value = None
         self.list_lock.release()
         return return_value
 
@@ -44,17 +48,38 @@ class SafeList:
         return size_of_list
 
 def thread_runtime(filename_buffer, global_histogram, \
-                    per_file_histograms, stdout_buffer):
-    #1 - producer check if there are filenames left to process
+                    per_file_histograms, per_file_print_buffer):
+    filename_to_process = filename_buffer.pop()
+    current_histogram = word_frequency.Histogram()
+    while (filename_to_process):
+        if not (os.path.isfile(filename_to_process)):
+            print>>sys.stderr, "Error: File \"{0}\" not found."\
+                                                    .format(args.input_file)
+        file_to_parse = open(filename_to_process, 'r')
+        lines_in_file = list(file_to_parse)
+        current_histogram = word_frequency.generate_histogram(lines_in_file)
+        per_file_print_buffer.append(\
+                (filename_to_process,current_histogram.sorted_word_freq_list()))
+        per_file_histograms.append(current_histogram)
+        filename_to_process = filename_buffer.pop()
+
+    #1 - producer check if there are filenames left to process and process a 
+        # histogram with each
 
     #2 - consumer check if there are per_file_histograms to combine, wait on
-    #    the global variable and have that kill the thread
+        # the global variable and have that kill the thread
+    
+def process_list_and_print(per_file_print_buffer, destination, \
+                                                    print_filename = False):
+    """Takes in a list of (filename,sorted_word_freq_list) tuples and prints
+    to destination. 
+    If print_filename is True, it prints in individual format, else it
+    just prints the words line by line"""
     pass
-
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--max_threads", type=int)
+    parser.add_argument("-m", "--max_threads", type=int, default=10)
     parser.add_argument("-o", "--outfile", type=str)
     args = parser.parse_args()
 
@@ -65,10 +90,22 @@ def main():
             filename_buffer.append(line.strip())
 
     per_file_histograms = SafeList()
-
-    stdout_buffer = SafeList()
-
+    per_file_print_buffer = SafeList()
     global_histogram = word_frequency.Histogram()
+
+    thread_list = list()
+
+    for thread_num in range(args.max_threads):
+        thread_list.append(threading.Thread(target=thread_runtime, \
+            args=(filename_buffer, global_histogram, \
+                per_file_histograms, per_file_print_buffer)))
+
+    for thread in thread_list:
+        thread.start()
+    for thread in thread_list:
+        thread.join()
+
+    process_list_and_print(per_file_print_buffer, sys.stdout, True)
 
 
 
