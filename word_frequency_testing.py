@@ -136,6 +136,23 @@ def main():
     safelist_tester.append("Hello!")
     test_cmp(safelist_tester.pop(), "Hello!", "SafeList Simple Append and Pop")
 
+    #SAFELIST APPEND, AND POP BY INDEX TEST
+    safelist_tester = SafeList()
+    safelist_tester.append("Zero Maca")
+    safelist_tester.append("One Maca")
+    safelist_tester.append("Two Maca")
+    safelist_tester.append("Three Macarena")
+    test_cmp(safelist_tester.pop(2), "Two Maca", "SafeList append, pop by index")
+
+    #SAFELIST GET SIZE TEST
+    safelist_tester = SafeList()
+    safelist_tester.append("One Fish")
+    safelist_tester.append("Two Fish")
+    safelist_tester.append("Red Fish")
+    safelist_tester.append("Blue Fish")
+    test_cmp(safelist_tester.get_size(), 4, "SafeList get_size")
+
+
     if tests_passed:
         print "Tests Passed."
     else:

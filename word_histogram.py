@@ -37,6 +37,21 @@ class SafeList:
         self.list_lock.release()
         return return_value
 
+    def get_size(self):
+        self.list_lock.acquire()
+        size_of_list = len(self.items)
+        self.list_lock.release()
+        return size_of_list
+
+def thread_runtime(filename_buffer, global_histogram, \
+                    per_file_histograms, stdout_buffer):
+    #1 - producer check if there are filenames left to process
+
+    #2 - consumer check if there are per_file_histograms to combine, wait on
+    #    the global variable and have that kill the thread
+    pass
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--max_threads", type=int)
@@ -44,6 +59,17 @@ def main():
     args = parser.parse_args()
 
     filename_buffer = SafeList()
+
+    for line in sys.stdin:
+        if line.strip():
+            filename_buffer.append(line.strip())
+
+    per_file_histograms = SafeList()
+
+    stdout_buffer = SafeList()
+
+    global_histogram = word_frequency.Histogram()
+
 
 
 if __name__ == '__main__':
