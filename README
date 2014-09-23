@@ -1,3 +1,4 @@
+#word_frequency.py
 word_frequency.py is a module that generates a histogram of word frequencies 
 in a given document.
 
@@ -7,10 +8,43 @@ a text file to parse, and outputs a list of words found and their frequencies
 usage:
 python word_frequency.py sampletext.txt
 
-This module will be integrated into word_histogram, which takes in multiple input files,
+Contains the following classes (documented in the module):
+SafeCount()
+Histogram()
+
+These classes are integrated into word_histogram:
+
+#word_histogram.py
+word_histogram.py is program which takes in multiple input files,
 and performs a cumulative threaded word frequency diagram. 
 
+Contains the following classes:
+SafeList()
+SafeLimitedList()
 
+High-Level Design Overview:
+
+The main() thread acts as a producer of sorts, parsing the input file into a 
+shared list filename_buffer of text file names to parse.
+
+main() then ceases to be an actor, and spawns n threads running thread_runtime.
+
+Within thread_runtime, a thread can fall into one of two categories:
+
+PRODUCER:
+    While there are still files available in filename_buffer, a thread in the
+    PRODUCER stage will pop a file off of filename_buffer, and generate a 
+    histogram from it, which will be added to the per_file_histograms buffer,
+    which is a SafeLimitedList.
+
+CONSUMER:
+    Asks for a histogram from per_file_histograms, which blocks until there
+    is one available. When a histogram is available, the consumer adds its 
+    contents to the per_file_print_buffer and then absorbs it into the global 
+    histogram. 
+    If consumer gets woken and the per_file_histograms buffer has returned
+    it a None object, that signals there are no more objects coming, and the
+    thread returns.
 
 
 

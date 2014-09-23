@@ -8,7 +8,8 @@
 import sys
 import threading
 import word_frequency
-from word_histogram import SafeList
+import word_histogram
+
 
 """word_frequency_testing.py, a testing environment for module
 word_frequency.py"""
@@ -132,12 +133,19 @@ def main():
     test_cmp(listogram[0].sorted_word_freq_list(), golden_cumulative, "Threaded huge multi absorb")
 
     #SAFELIST SIMPLE APPEND AND POP TEST
-    safelist_tester = SafeList()
+    safelist_tester = word_histogram.SafeList()
     safelist_tester.append("Hello!")
     test_cmp(safelist_tester.pop(), "Hello!", "SafeList Simple Append and Pop")
 
+    #SAFELIST LIFO APPEND AND POP TEST
+    safelist_tester = word_histogram.SafeList()
+    safelist_tester.append("Hello!")
+    safelist_tester.append("Second")
+    test_cmp(safelist_tester.pop(), "Second", "SafeList Simple Append and Pop")
+
+
     #SAFELIST APPEND, AND POP BY INDEX TEST
-    safelist_tester = SafeList()
+    safelist_tester = word_histogram.SafeList()
     safelist_tester.append("Zero Maca")
     safelist_tester.append("One Maca")
     safelist_tester.append("Two Maca")
@@ -145,12 +153,54 @@ def main():
     test_cmp(safelist_tester.pop(2), "Two Maca", "SafeList append, pop by index")
 
     #SAFELIST GET SIZE TEST
-    safelist_tester = SafeList()
+    safelist_tester = word_histogram.SafeList()
     safelist_tester.append("One Fish")
     safelist_tester.append("Two Fish")
     safelist_tester.append("Red Fish")
     safelist_tester.append("Blue Fish")
     test_cmp(safelist_tester.get_size(), 4, "SafeList get_size")
+
+    #SAFELIST OUT OF BOUNDS TEST
+    safelist_tester = word_histogram.SafeList()
+    safelist_tester.append("On the Edge")
+    safelist_tester.append("Of glory")
+    caught_val = safelist_tester.pop(2)
+    test_cmp(caught_val, None, "Out of bounds test")
+
+    #SAFELIMITEDLIST APPEND AND POP TEST
+    safelimited_tester = word_histogram.SafeLimitedList(5)
+    safelimited_tester.append("Swag")
+    safelimited_tester.append("Gerific")
+    caught_val = safelimited_tester.pop()
+    caught_val2 = safelimited_tester.pop()
+    test_cmp(caught_val, "Gerific", "SafeLimited Append and Pop1")
+    test_cmp(caught_val2, "Swag", "SafeLimited Append and Pop2")
+
+
+    #SAFELIMITEDLIST THREADED ACCESS TESET
+    safelimited_tester2 = word_histogram.SafeLimitedList(5)
+    
+    def add_to_safe_limited(safelimited_list, item_to_add):
+        safelimited_list.append(item_to_add)
+
+    def pop_from_safe_limited_onto(safelimited_list, external_list):
+        return_value = safelimited_list.pop()
+        external_list.append(return_value)
+
+    threads_list = list()
+    caught_values = list()
+    threads_list.append(threading.Thread(target=pop_from_safe_limited_onto, args=((safelimited_tester2, caught_values))))
+    threads_list.append(threading.Thread(target=add_to_safe_limited, args=((safelimited_tester2,"One"))))
+    threads_list.append(threading.Thread(target=add_to_safe_limited, args=((safelimited_tester2,"Two"))))
+    threads_list.append(threading.Thread(target=pop_from_safe_limited_onto, args=((safelimited_tester2, caught_values))))
+
+    for thread in threads_list:
+        thread.start()
+    for thread in threads_list:
+        thread.join()
+
+    caught_values.sort()
+    test_cmp(caught_values, ["One", "Two"], "SafeLimitedList Access")
 
 
     if tests_passed:

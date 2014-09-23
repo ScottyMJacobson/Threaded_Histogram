@@ -18,7 +18,8 @@ and cumulative histograms for the files"""
 
 class SafeList:
     """SafeList, a wrapper object that provides thread-safe access to a list
-    (this use case: list of files remaining to parse, list of outputs)"""
+    (this use case: list of files remaining to parse, list of outputs)
+    if items_to_expect is provided, create a semaphore that """
     def __init__(self):
         self.items = list()
         self.list_lock = threading.Lock()
@@ -29,15 +30,19 @@ class SafeList:
         self.items.append(item)
         self.list_lock.release()
 
-    def pop(self, index=0):
-        """pops item at index from the list and returns. If no index is 
-        specified, pops from the back of the list. If the list is empty,
-        returns as void with NoneType object"""
+    def pop(self, index=-1):
+        """pops item at index from the list and returns. 
+        If index is not valid or list is empty, squelches exception 
+        and returns None
+        If no index is specified, pops from the back of the list."""
         self.list_lock.acquire()
-        if len(self.items):
-            return_value = self.items.pop(index)
+        if index:
+            try:
+                return_value = self.items.pop(index)
+            except IndexError:
+                return_value = None
         else:
-            return_value = None
+            return_value = self.items.pop()
         self.list_lock.release()
         return return_value
 
@@ -47,8 +52,39 @@ class SafeList:
         self.list_lock.release()
         return size_of_list
 
+class SafeLimitedList:
+    """A wrapper over safelist that uses a semaphore to halt threads calling 
+    pop() when it is empty, and a second semaphore to limit the number of 
+    objects that can flow through it. When this limit has been reached, 
+    subsequent calls to pop will return a NoneType"""
+    def __init__(self, limit):
+        self.items = SafeList()
+        self.flow_limit = threading.Semaphore(limit) #decremented with pop
+        self.items_available = threading.Semaphore(0)
+
+    def append(self, item):
+        self.items.append(item)
+        self.items_available.release()
+
+    def pop(self):
+        """pops from the back of the list.
+        If the limit has been used up, there's no object, and there's
+        never gonna be an object, kid. Give up. (tell the calling thread that
+        there's nothing coming by returning None)"""
+        if not self.flow_limit.acquire(False):
+            if self.items.get_size():
+                raise Exception("LimitedList recieved more objects than limit")
+                return None
+            return None
+        self.items_available.acquire()
+        return_value = self.items.pop()
+        return return_value
+
+
 def thread_runtime(filename_buffer, global_histogram, \
                     per_file_histograms, per_file_print_buffer):
+    #Task 1 - Acting as producer, a thread checks if there are filenames left 
+    #to process and generates a histogram with each
     filename_to_process = filename_buffer.pop()
     current_histogram = word_frequency.Histogram()
     while (filename_to_process):
@@ -63,12 +99,14 @@ def thread_runtime(filename_buffer, global_histogram, \
         per_file_histograms.append(current_histogram)
         filename_to_process = filename_buffer.pop()
 
-    #1 - producer check if there are filenames left to process and process a 
-        # histogram with each
+    #Task 2 - Acting as consumer, check if there are per_file_histograms 
+    #to combine, wait on per_file_histograms if none, pop one, or terminate
+    histogram_to_process = per_file_histograms.pop()
+    if not histogram_to_process: #SafeCyclesList returns a nonetype if its
+                                 #cycles have been used up
+        return
 
-    #2 - consumer check if there are per_file_histograms to combine, wait on
-        # the global variable and have that kill the thread
-    
+
 def process_list_and_print(print_buffer, destination, \
                                                     print_filename = False):
     """Takes in a list of (filename,sorted_word_freq_list) tuples and prints
@@ -111,6 +149,8 @@ def main():
             args=(filename_buffer, global_histogram, \
                 per_file_histograms, per_file_print_buffer)))
 
+    per_file_histogram_available = threading.Condition()
+
     for thread in thread_list:
         thread.start()
     for thread in thread_list:
@@ -132,3 +172,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
