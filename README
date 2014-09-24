@@ -42,13 +42,9 @@ CONSUMER:
     is one available. When a histogram is available, the consumer adds its 
     contents to the per_file_print_buffer and then absorbs it into the global 
     histogram. 
-    If consumer gets woken and the per_file_histograms buffer has returned
-    it a None object, that signals there are no more objects coming, and the
-    thread returns.
-
-
-
+    If consumer, instead of halting, discovers that the per_file_histograms 
+    buffer has returned it a None object, that signals there are no more 
+    objects coming, and the thread returns.
 
 This repository includes related basic unit tests, which can be run as:
-
 python word_frequency_testing.py
