@@ -73,7 +73,6 @@ class SafeLimitedList:
         there's nothing coming by returning None)"""
         if not self.flow_limit.acquire(False):
             if self.items.get_size():
-                raise Exception("LimitedList recieved more objects than limit")
                 return None
             return None
         self.items_available.acquire()
@@ -102,9 +101,12 @@ def thread_runtime(filename_buffer, global_histogram, \
     #Task 2 - Acting as consumer, check if there are per_file_histograms 
     #to combine, wait on per_file_histograms if none, pop one, or terminate
     histogram_to_process = per_file_histograms.pop()
-    if not histogram_to_process: #SafeCyclesList returns a nonetype if its
-                                 #cycles have been used up
-        return
+    if not histogram_to_process: #SafeCyclesList returns a nonetype if its                             
+        return                   #cycles have been used up. We're done here!
+    while (histogram_to_process):
+        global_histogram.absorb(histogram_to_process)
+        histogram_to_process = per_file_histograms.pop()
+    return
 
 
 def process_list_and_print(print_buffer, destination, \
@@ -138,7 +140,7 @@ def main():
         if line.strip():
             filename_buffer.append(line.strip())
 
-    per_file_histograms = SafeList()
+    per_file_histograms = SafeLimitedList(filename_buffer.get_size())
     per_file_print_buffer = SafeList()
     global_histogram = word_frequency.Histogram()
 
@@ -159,7 +161,7 @@ def main():
     process_list_and_print(per_file_print_buffer, sys.stdout, True)
     global_print_buffer = SafeList()
     global_print_buffer.append(\
-                        ("Global",global_histogram.sorted_word_freq_list())   )
+                        ("Global",global_histogram.sorted_word_freq_list()) )
     output_destination = sys.stdout
     if args.outfile:
         if args.outfile == " ":
