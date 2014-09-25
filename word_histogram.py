@@ -79,6 +79,9 @@ class SafeLimitedList:
         return_value = self.items.pop()
         return return_value
 
+    def get_size(self):
+        return self.items.get_size()
+
 
 def thread_runtime(filename_buffer, global_histogram, \
                     per_file_histograms, per_file_print_buffer):
@@ -89,7 +92,7 @@ def thread_runtime(filename_buffer, global_histogram, \
     while (filename_to_process):
         if not (os.path.isfile(filename_to_process)):
             print>>sys.stderr, "Error: File \"{0}\" not found."\
-                                                    .format(args.input_file)
+                                                    .format(filename_to_process)
         file_to_parse = open(filename_to_process, 'r')
         lines_in_file = list(file_to_parse)
         current_histogram = word_frequency.generate_histogram(lines_in_file)
@@ -110,11 +113,12 @@ def thread_runtime(filename_buffer, global_histogram, \
 
 
 def process_list_and_print(print_buffer, destination, \
-                                                    print_filename = False):
+                             print_lock, print_filename = False):
     """Takes in a list of (filename,sorted_word_freq_list) tuples and prints
     to destination. 
     If print_filename is True, it prints in individual format, else it
     just prints the words line by line"""
+    print_lock.acquire()
     current_tuple = print_buffer.pop()
     while (current_tuple):
         current_filename = current_tuple[0]
@@ -127,6 +131,7 @@ def process_list_and_print(print_buffer, destination, \
                 print>>destination, "{0} {1}".format(\
                                     current_word_freq[0], current_word_freq[1])
         current_tuple = print_buffer.pop()
+    print_lock.release()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -135,10 +140,22 @@ def main():
     args = parser.parse_args()
 
     filename_buffer = SafeList()
+    print_lock = threading.Lock()
 
-    for line in sys.stdin:
-        if line.strip():
-            filename_buffer.append(line.strip())
+    filename = raw_input()
+    while filename:
+        if filename.strip():
+            filename_buffer.append(filename.strip())
+        try:
+            filename = raw_input()
+        except KeyboardInterrupt:
+            print ""
+            #filename_buffer.append(None)
+            break
+        except EOFError:
+            print ""
+            #filename_buffer.append(None)
+            break
 
     per_file_histograms = SafeLimitedList(filename_buffer.get_size())
     per_file_print_buffer = SafeList()
@@ -158,7 +175,7 @@ def main():
     for thread in thread_list:
         thread.join()
 
-    process_list_and_print(per_file_print_buffer, sys.stdout, True)
+    process_list_and_print(per_file_print_buffer, sys.stdout, print_lock, True)
     global_print_buffer = SafeList()
     global_print_buffer.append(\
                         ("Global",global_histogram.sorted_word_freq_list()) )
@@ -169,7 +186,7 @@ def main():
         else:
             output_destination = open(args.outfile, 'w')
 
-    process_list_and_print(global_print_buffer, output_destination)
+    process_list_and_print(global_print_buffer, output_destination, print_lock)
 
 
 if __name__ == '__main__':
