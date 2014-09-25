@@ -1,3 +1,4 @@
+##################################
 #word_frequency.py
 word_frequency.py is a module that generates a histogram of word frequencies 
 in a given document.
@@ -14,37 +15,51 @@ Histogram()
 
 These classes are integrated into word_histogram:
 
+###################################
 #word_histogram.py
-word_histogram.py is program which takes in multiple input files,
-and performs a cumulative threaded word frequency diagram. 
+word_histogram.py is program which takes in the names of input files 
+line-by-line, each followed by a *SINGLE NEWLINE* and performs a 
+cumulative threaded word frequency diagram. 
+(this single newline is important - it interprets a double newline as an EOF)
 
+usage:
+python word_histogram.py -o outputfile.txt -m 100 < list_of_files.txt
+
+where list_of_files.txt looks like:
+file1.txt
+file2.txt
+
+word_histogram.py
 Contains the following classes:
 SafeList()
 SafeLimitedList()
+SafeJobQueue()
 
 High-Level Design Overview:
 
-The main() thread acts as a producer of sorts, parsing the input file into a 
-shared list filename_buffer of text file names to parse.
 
-main() then ceases to be an actor, and spawns n threads running thread_runtime.
+The main() thread acts as a producer, parsing the input line by line. After
+getting a line, it pushes a work order to the queue asking the consumer threads
+to take a filename and turn it into a histogram with a "FILENAME" work order. 
 
-Within thread_runtime, a thread can fall into one of two categories:
+as main is a producer, it spawns n-1 threads running thread_runtime.
 
-PRODUCER:
-    While there are still files available in filename_buffer, a thread in the
-    PRODUCER stage will pop a file off of filename_buffer, and generate a 
-    histogram from it, which will be added to the per_file_histograms buffer,
-    which is a SafeLimitedList.
+Within thread_runtime, a thread can grab one of two work orders:
 
-CONSUMER:
-    Asks for a histogram from per_file_histograms, which blocks until there
-    is one available. When a histogram is available, the consumer adds its 
-    contents to the per_file_print_buffer and then absorbs it into the global 
-    histogram. 
-    If consumer, instead of halting, discovers that the per_file_histograms 
-    buffer has returned it a None object, that signals there are no more 
-    objects coming, and the thread returns.
+FILENAME:
+    After main pushes a filename to the job queue, a thread in this stage 
+    will pop that name off, and generate a per-file histogram from it. 
+    It pushes this histogram as a HISTOGRAM job to the work_queue, and then 
+    prints it, allowing another thread to get started merging it while
+    it prints it to stdout.
+
+HISTOGRAM:
+    A thread that gets a HISTOGRAM job absorbs it into the global histogram. 
+
+HEY_STOP_IT_YOU:
+    A special signal added to the back of the queue by main() when it has 
+    determined that there are no more filenames to be added. A thread that gets 
+    this signal puts it back on the queue and then returns, killing the thread.
 
 This repository includes related basic unit tests, which can be run as:
 python word_frequency_testing.py

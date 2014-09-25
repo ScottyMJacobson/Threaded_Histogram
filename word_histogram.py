@@ -16,10 +16,31 @@ import sys
 a list of text files and a max number of threads and generates seperate
 and cumulative histograms for the files"""
 
-class SafeList:
-    """SafeList, a wrapper object that provides thread-safe access to a list
-    (this use case: list of files remaining to parse, list of outputs)
-    if items_to_expect is provided, create a semaphore that """
+class SafeJobQueue:
+    """SafeJobQueue, a FIFO object that provides thread-safe access to a 
+    list and uses a Semaphore to keep track of availabilty. 
+    Thus, it halts a thread if there's nothing available. """
+    def __init__(self):
+        self.items = list()
+        self.items_available = threading.Semaphore(0)
+        self.list_lock = threading.Lock()
+
+    def enqueue(self, item):
+        self.list_lock.acquire()
+        self.items.insert(0, item)
+        self.items_available.release()
+        self.list_lock.release()
+
+    def dequeue(self):
+        self.items_available.acquire()
+        self.list_lock.acquire()
+        return_value = self.items.pop()
+        self.list_lock.release()
+        return return_value
+
+class SafeStack:
+    """SafeStack, a LIFO object that provides thread-safe access to a list
+    (this use case: list of files remaining to parse, list of outputs)."""
     def __init__(self):
         self.items = list()
         self.list_lock = threading.Lock()
@@ -52,13 +73,13 @@ class SafeList:
         self.list_lock.release()
         return size_of_list
 
-class SafeLimitedList:
+class SafeLimitedStack:
     """A wrapper over safelist that uses a semaphore to halt threads calling 
     pop() when it is empty, and a second semaphore to limit the number of 
     objects that can flow through it. When this limit has been reached, 
-    subsequent calls to pop will return a NoneType"""
+    subsequent calls to pop will return a NoneType. Provides LIFO access"""
     def __init__(self, limit):
-        self.items = SafeList()
+        self.items = SafeStack()
         self.flow_limit = threading.Semaphore(limit) #decremented with pop
         self.items_available = threading.Semaphore(0)
 
@@ -82,56 +103,71 @@ class SafeLimitedList:
     def get_size(self):
         return self.items.get_size()
 
+def make_filename_job(filename):
+    return (("FILENAME", filename))
 
-def thread_runtime(filename_buffer, global_histogram, \
-                    per_file_histograms, per_file_print_buffer):
-    #Task 1 - Acting as producer, a thread checks if there are filenames left 
-    #to process and generates a histogram with each
-    filename_to_process = filename_buffer.pop()
-    current_histogram = word_frequency.Histogram()
-    while (filename_to_process):
-        if not (os.path.isfile(filename_to_process)):
-            print>>sys.stderr, "Error: File \"{0}\" not found."\
-                                                    .format(filename_to_process)
-        file_to_parse = open(filename_to_process, 'r')
-        lines_in_file = list(file_to_parse)
-        current_histogram = word_frequency.generate_histogram(lines_in_file)
-        per_file_print_buffer.append(\
-                (filename_to_process,current_histogram.sorted_word_freq_list()))
-        per_file_histograms.append(current_histogram)
-        filename_to_process = filename_buffer.pop()
+def make_per_file_histogram_job(histogram):
+    return (("HISTOGRAM"), histogram)
 
-    #Task 2 - Acting as consumer, check if there are per_file_histograms 
-    #to combine, wait on per_file_histograms if none, pop one, or terminate
-    histogram_to_process = per_file_histograms.pop()
-    if not histogram_to_process: #SafeCyclesList returns a nonetype if its                             
-        return                   #cycles have been used up. We're done here!
-    while (histogram_to_process):
-        global_histogram.absorb(histogram_to_process)
-        histogram_to_process = per_file_histograms.pop()
-    return
+def make_stop_order():
+    return (("HEY_STOP_IT_YOU", "PRETTY_PLEASE"))
 
+def thread_runtime(work_queue, global_histogram, print_lock):
+    while 1:
+        order_to_process = work_queue.dequeue()
+        #If this signal was pushed onto the queue from main, and this thread
+        #reaches it, it means there's nothing left for this thread to do 
+        if order_to_process[0] == "HEY_STOP_IT_YOU":
+            work_queue.enqueue(order_to_process)
+            return
+        #Task 1 - Acting as consumer and producer, a thread checks if the
+        #current work order is a filename, and generates and prints its histo
+        #it adds this histogram as a work order so it can possibly be absorbed 
+        #by another thread while this thread is printing  
+        elif order_to_process[0] == "FILENAME":
+            filename_to_process = order_to_process[1]
+            current_histogram = word_frequency.Histogram()
+            if not (os.path.isfile(filename_to_process)):
+                print>>sys.stderr, "Error: File \"{0}\" not found."\
+                                                .format(filename_to_process)
+            else:
+                file_to_parse = open(filename_to_process, 'r')
+                lines_in_file = list(file_to_parse)
+                current_histogram = word_frequency.generate_histogram(\
+                                                            lines_in_file)
+                work_queue.enqueue(make_per_file_histogram_job(\
+                                                        current_histogram))
+                process_and_print(\
+                                (filename_to_process, \
+                                current_histogram.sorted_word_freq_list()), \
+                                sys.stdout, print_lock, True)
+            #End of Task 1
 
-def process_list_and_print(print_buffer, destination, \
+        #Task 2 - Acting as consumer, grab a per-file histogram to combine 
+        #from the work queue and absorb it into the global histogram
+        elif order_to_process[0] == "HISTOGRAM":
+            global_histogram.absorb(order_to_process[1])
+            #End of Task 2
+
+def process_and_print(print_tuple, destination, \
                              print_lock, print_filename = False):
-    """Takes in a list of (filename,sorted_word_freq_list) tuples and prints
+    """Takes in a tuple of (filename,sorted_word_freq_list) and prints
     to destination. 
     If print_filename is True, it prints in individual format, else it
     just prints the words line by line"""
     print_lock.acquire()
-    current_tuple = print_buffer.pop()
-    while (current_tuple):
-        current_filename = current_tuple[0]
-        current_word_freq_list = current_tuple[1]
-        for current_word_freq in current_word_freq_list:
-            if print_filename:
-                print>>destination, "{0}:\t{1} {2}".format(current_filename,\
+    current_filename = print_tuple[0]
+    current_word_freq_list = print_tuple[1]
+    for current_word_freq in current_word_freq_list:
+        if print_filename:
+            print>>destination, "{0}:\t{1} {2}".format(current_filename,\
                                 current_word_freq[0], current_word_freq[1])
-            else:
-                print>>destination, "{0} {1}".format(\
+        else:
+            print>>destination, "{0} {1}".format(\
                                     current_word_freq[0], current_word_freq[1])
-        current_tuple = print_buffer.pop()
     print_lock.release()
+
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -139,55 +175,48 @@ def main():
     parser.add_argument("-o", "--outfile", type=str)
     args = parser.parse_args()
 
-    filename_buffer = SafeList()
+    work_queue = SafeJobQueue()
     print_lock = threading.Lock()
-
-    filename = raw_input()
-    while filename:
-        if filename.strip():
-            filename_buffer.append(filename.strip())
-        try:
-            filename = raw_input()
-        except KeyboardInterrupt:
-            print ""
-            #filename_buffer.append(None)
-            break
-        except EOFError:
-            print ""
-            #filename_buffer.append(None)
-            break
-
-    per_file_histograms = SafeLimitedList(filename_buffer.get_size())
-    per_file_print_buffer = SafeList()
     global_histogram = word_frequency.Histogram()
 
     thread_list = list()
 
-    for thread_num in range(args.max_threads):
+    max_threads = args.max_threads if args.max_threads >= 2 else 2
+
+    for thread_num in range(args.max_threads-1):
         thread_list.append(threading.Thread(target=thread_runtime, \
-            args=(filename_buffer, global_histogram, \
-                per_file_histograms, per_file_print_buffer)))
-
-    per_file_histogram_available = threading.Condition()
-
+            args=(work_queue, global_histogram, print_lock)))
     for thread in thread_list:
         thread.start()
+
+    filename = raw_input()
+    while filename:
+        if filename.strip():
+            work_queue.enqueue(make_filename_job(filename.strip()))
+        try:
+            filename = raw_input()
+            if not filename:
+                work_queue.enqueue(make_stop_order())
+        except KeyboardInterrupt:
+            work_queue.enqueue(make_stop_order())
+            break
+        except EOFError:
+            work_queue.enqueue(make_stop_order())
+            break
+
     for thread in thread_list:
         thread.join()
 
-    process_list_and_print(per_file_print_buffer, sys.stdout, print_lock, True)
-    global_print_buffer = SafeList()
-    global_print_buffer.append(\
-                        ("Global",global_histogram.sorted_word_freq_list()) )
     output_destination = sys.stdout
     if args.outfile:
-        if args.outfile == " ":
+        if args.outfile == "-":
             output_destination = sys.stdout
         else:
             output_destination = open(args.outfile, 'w')
 
-    process_list_and_print(global_print_buffer, output_destination, print_lock)
-
+    process_and_print(("Global",global_histogram.sorted_word_freq_list()),\
+                                         output_destination, print_lock)
+    exit(0)
 
 if __name__ == '__main__':
     main()

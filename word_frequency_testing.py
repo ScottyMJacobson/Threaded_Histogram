@@ -132,43 +132,43 @@ def main():
 
     test_cmp(listogram[0].sorted_word_freq_list(), golden_cumulative, "Threaded huge multi absorb")
 
-    #SAFELIST SIMPLE APPEND AND POP TEST
-    safelist_tester = word_histogram.SafeList()
+    #SAFESTACK SIMPLE APPEND AND POP TEST
+    safelist_tester = word_histogram.SafeStack()
     safelist_tester.append("Hello!")
-    test_cmp(safelist_tester.pop(), "Hello!", "SafeList Simple Append and Pop")
+    test_cmp(safelist_tester.pop(), "Hello!", "SafeStack Simple Append and Pop")
 
-    #SAFELIST LIFO APPEND AND POP TEST
-    safelist_tester = word_histogram.SafeList()
+    #SAFESTACK LIFO APPEND AND POP TEST
+    safelist_tester = word_histogram.SafeStack()
     safelist_tester.append("Hello!")
     safelist_tester.append("Second")
-    test_cmp(safelist_tester.pop(), "Second", "SafeList Simple Append and Pop")
+    test_cmp(safelist_tester.pop(), "Second", "SafeStack Simple Append and Pop")
 
 
-    #SAFELIST APPEND, AND POP BY INDEX TEST
-    safelist_tester = word_histogram.SafeList()
+    #SAFESTACK APPEND, AND POP BY INDEX TEST
+    safelist_tester = word_histogram.SafeStack()
     safelist_tester.append("Zero Maca")
     safelist_tester.append("One Maca")
     safelist_tester.append("Two Maca")
     safelist_tester.append("Three Macarena")
-    test_cmp(safelist_tester.pop(2), "Two Maca", "SafeList append, pop by index")
+    test_cmp(safelist_tester.pop(2), "Two Maca", "SafeStack append, pop by index")
 
-    #SAFELIST GET SIZE TEST
-    safelist_tester = word_histogram.SafeList()
+    #SAFESTACK GET SIZE TEST
+    safelist_tester = word_histogram.SafeStack()
     safelist_tester.append("One Fish")
     safelist_tester.append("Two Fish")
     safelist_tester.append("Red Fish")
     safelist_tester.append("Blue Fish")
-    test_cmp(safelist_tester.get_size(), 4, "SafeList get_size")
+    test_cmp(safelist_tester.get_size(), 4, "SafeStack get_size")
 
-    #SAFELIST OUT OF BOUNDS TEST
-    safelist_tester = word_histogram.SafeList()
+    #SAFESTACK OUT OF BOUNDS TEST
+    safelist_tester = word_histogram.SafeStack()
     safelist_tester.append("On the Edge")
     safelist_tester.append("Of glory")
     caught_val = safelist_tester.pop(2)
     test_cmp(caught_val, None, "Out of bounds test")
 
     #SAFELIMITEDLIST APPEND AND POP TEST
-    safelimited_tester = word_histogram.SafeLimitedList(5)
+    safelimited_tester = word_histogram.SafeLimitedStack(5)
     safelimited_tester.append("Swag")
     safelimited_tester.append("Gerific")
     caught_val = safelimited_tester.pop()
@@ -178,7 +178,7 @@ def main():
 
 
     #SAFELIMITEDLIST THREADED ACCESS TESET
-    safelimited_tester2 = word_histogram.SafeLimitedList(5)
+    safelimited_tester2 = word_histogram.SafeLimitedStack(5)
     
     def add_to_safe_limited(safelimited_list, item_to_add):
         safelimited_list.append(item_to_add)
@@ -200,7 +200,17 @@ def main():
         thread.join()
 
     caught_values.sort()
-    test_cmp(caught_values, ["One", "Two"], "SafeLimitedList Access")
+    test_cmp(caught_values, ["One", "Two"], "SafeLimitedStack Access")
+
+    #SAFEJOBQUEUE SIMPLE ENQUEUE DEQUEUE
+    jobqueue_tester = word_histogram.SafeJobQueue()
+
+    jobqueue_tester.enqueue("One")
+    jobqueue_tester.enqueue("Is the lonliest number")
+
+    return_value1 = jobqueue_tester.dequeue()
+    test_cmp(return_value1, "One", "SafeJobQueue simple enqueue/dequeue")
+
 
 
     if tests_passed:
